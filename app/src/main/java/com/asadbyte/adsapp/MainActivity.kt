@@ -8,17 +8,33 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
 import com.asadbyte.adsapp.ads.AdManager
 import com.asadbyte.adsapp.ads.AdMobDemoScreen
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
-    private val adManager = AdManager.getInstance()
+    private val adManager by lazy { AdManager.getInstance(application) }
+    private var isAdLoading = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val splashScreen = installSplashScreen()
 
+        splashScreen.setKeepOnScreenCondition { isAdLoading }
+
+        adManager.loadAppOpenAd(this) {
+            adManager.showAppOpenAd(this)
+            lifecycleScope.launch {
+                delay(1000)
+                isAdLoading = false
+            }
+        }
         // Initialize AdMob
         adManager.initialize(this)
 
@@ -27,7 +43,6 @@ class MainActivity : ComponentActivity() {
         adManager.loadRewardedAd(this)
         adManager.loadRewardedInterstitialAd(this)
         adManager.loadNativeAd(this, withMediaView = true)
-        adManager.loadAppOpenAd(this)
 
         setContent {
             AdMobDemoTheme {
@@ -35,7 +50,12 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AdMobDemoScreen()
+                    AdMobDemoScreen(
+                        onAdLoadComplete = {
+                            isAdLoading = false
+                            adManager.showAppOpenAd(this)
+                        }
+                    )
                 }
             }
         }

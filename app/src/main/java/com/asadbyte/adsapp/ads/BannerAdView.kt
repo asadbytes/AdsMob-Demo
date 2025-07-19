@@ -16,8 +16,6 @@ fun BannerAdView(
     adSize: AdSize,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-
     AndroidView(
         modifier = modifier.fillMaxWidth(),
         factory = { ctx ->
@@ -51,8 +49,6 @@ fun MediumBannerAd(modifier: Modifier = Modifier) {
 
 @Composable
 fun CollapsibleBannerAd(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-
     AndroidView(
         modifier = modifier.fillMaxWidth(),
         factory = { ctx ->

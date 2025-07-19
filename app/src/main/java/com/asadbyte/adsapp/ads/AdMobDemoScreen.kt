@@ -1,5 +1,6 @@
 package com.asadbyte.adsapp.ads
 
+import android.app.Application
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,11 +27,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.asadbyte.adsapp.MyApplication
 
 @Composable
-fun AdMobDemoScreen() {
+fun AdMobDemoScreen(
+    onAdLoadComplete: () -> Unit
+) {
     val context = LocalContext.current
-    val adManager = AdManager.getInstance()
+    val adManager = remember {
+        AdManager.getInstance(context.applicationContext as Application)
+    }
 
     // Collect ad states
     val interstitialAd by adManager.interstitialAdState.collectAsStateWithLifecycle()
@@ -340,7 +346,7 @@ fun AdMobDemoScreen() {
                                 if (appOpenAd != null) {
                                     adManager.showAppOpenAd(context as ComponentActivity)
                                 } else {
-                                    adManager.loadAppOpenAd(context, force = true)
+                                    adManager.loadAppOpenAd(context, onAdLoadComplete)
                                 }
                             },
                             enabled = !isAppOpenLoading
@@ -376,7 +382,7 @@ fun AdMobDemoScreen() {
                                 adManager.loadRewardedAd(context, force = true)
                                 adManager.loadRewardedInterstitialAd(context, force = true)
                                 adManager.loadNativeAd(context, withMediaView = true, force = true)
-                                adManager.loadAppOpenAd(context, force = true)
+                                adManager.loadAppOpenAd(context, onAdLoadComplete)
                             }
                         ) {
                             Text("Reload All Ads")
