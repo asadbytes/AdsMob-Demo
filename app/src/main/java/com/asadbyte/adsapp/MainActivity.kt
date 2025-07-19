@@ -3,69 +3,52 @@ package com.asadbyte.adsapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.asadbyte.adsapp.ads.AdManager
-import com.asadbyte.adsapp.ads.AdMobDemoScreen
+import com.asadbyte.adsapp.ads.AdViewModel
+import com.asadbyte.adsapp.ads.demo.AdMobDemoScreen
+import com.asadbyte.adsapp.ui.theme.AdsAppTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
-    private val adManager by lazy { AdManager.getInstance(application) }
-    private var isAdLoading = true
+    private val viewModel: AdViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         val splashScreen = installSplashScreen()
 
-        splashScreen.setKeepOnScreenCondition { isAdLoading }
-
-        adManager.loadAppOpenAd(this) {
-            adManager.showAppOpenAd(this)
-            lifecycleScope.launch {
-                delay(1000)
-                isAdLoading = false
-            }
+        splashScreen.setKeepOnScreenCondition {
+            viewModel.uiState.value.isAppLoading
         }
-        // Initialize AdMob
-        adManager.initialize(this)
 
-        // Load ads
-        adManager.loadInterstitialAd(this)
-        adManager.loadRewardedAd(this)
-        adManager.loadRewardedInterstitialAd(this)
-        adManager.loadNativeAd(this, withMediaView = true)
+        viewModel.handleInitialAppLoad(this)
 
         setContent {
-            AdMobDemoTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    AdMobDemoScreen(
-                        onAdLoadComplete = {
-                            isAdLoading = false
-                            adManager.showAppOpenAd(this)
-                        }
-                    )
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+            if (!uiState.isAppLoading) {
+                AdsAppTheme {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        AdMobDemoScreen(viewModel = viewModel)
+                    }
                 }
             }
         }
     }
-}
-
-@Composable
-fun AdMobDemoTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = lightColorScheme(),
-        content = content
-    )
 }
